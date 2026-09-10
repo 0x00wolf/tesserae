@@ -2,9 +2,9 @@
 
 A tessera (plural: tesserae, diminutive tessella) is an individual tile, usually formed in the shape of a square, used in creating a mosaic. 
 
-This project is intended to vastly simplify the process of determining an ideal schedule at your university. Currently it is designed to work out of the box forDalhousie University, but the scraper isn't actually Dal-specific. It targets Ellucian Banner Extensibility, which a lot of universities run. Swap the base URL and the domain names and it should work for another school with minimal or no tweaking.
+This project is intended to vastly simplify the process of determining your ideal schedule at university. Currently it is designed to work out of the box for Dalhousie University, but the scraper isn't actually Dal-specific. It targets Ellucian Banner Extensibility, which a lot of universities run. Swap the base URL and the domain names and it should work for another school with minimal or no tweaking.
 
-I made this when I was struggling to find a class schedule that let me take the courses I required without overlap. I was working between two semesters, and it wasn't an experience I wanted to relive. 
+I made this when I was struggling to find a class schedule that let me take the courses I required without overlap. I was trying to plan for two semesters and every change caused course conflicts between the two semesters. It wasn't an experience I wanted to relive. 
 
 ## Important
 
@@ -20,6 +20,8 @@ This project was generated with the assistance of Opus 5.0.
 - **`plan.py`** — list the courses you need, run it, get every conflict-free way to fit them across your terms.  Can generate a PDF of your potential outcomes in pretty formatting to visually analyze the schedule iterations generated.
 
 It reads Dalhousie's published timetable directly. No login, no scraping of web pages, no account.
+
+User browser.py to find out if the courses you want are being offered and then modify plan.py so that it outputs all of the potential non-conflicting schedules you can have with your desired courses. Use the planner to identify electives, block off TA'ing sessions. It has all the features I need to plan my semester, so I'm assuming it will work for yours as well :).
 
 ## What's here
 
@@ -39,17 +41,29 @@ tests/             offline tests, and the captured sections they run on
 docs/MODULES.md    the API, if you want to build your own tool
 ```
 
-Two files at the top level are the two you touch. Everything else supports them.
-
 ## Setup
 
-Python 3.8 or newer. **No dependencies** — everything runs on the standard library, unless you want to generate a PDF:
+Python 3.9 or newer. **No dependencies** (std. lib only), unless you want to generate a PDF of your selected schedule or of potential schedules for visual review. 
 
+The project is setup with Astral's UV, so you can just run `uv sync` if you want to install the requirements, and then run the files with `uv run filename --arguments`:
+
+Example:
+
+```bash
+$ uv sync
+$ uv run browser.py --terms # find out term codes
+$ uv run browser.py --check 3152 --sections --term 202710 # Example: Check to see if a specific course is offered in a specific term.
 ```
+
+If you're using pip:
+
+```bash
 pip install reportlab pillow
 ```
 
-## Start here: what's being offered?
+## Detailed Guide
+
+### Start here: what's being offered?
 
 ```
 $ python3 browser.py --terms
