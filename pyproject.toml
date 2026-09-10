@@ -1,0 +1,24 @@
+[project]
+name = "tessera"
+version = "1.0.0"
+description = "Read Dalhousie's academic timetable and build conflict-free schedules from it."
+requires-python = ">=3.9"
+
+# Only the PDF renderer needs anything outside the standard library.
+# They are required rather than optional so that `uv sync` leaves you with a
+# setup where every part of the tool works, including PDF output.
+dependencies = [
+    "reportlab>=4.0",
+    "pillow>=10.0",
+]
+
+[dependency-groups]
+dev = [
+    "pdfplumber>=0.11",
+]
+
+# This is an application you run from this folder, not a library you install,
+# so uv manages the environment without building a wheel. Flip to
+# package = true (and add a [build-system]) if you ever want `pip install .`.
+[tool.uv]
+package = false
