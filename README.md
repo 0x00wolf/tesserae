@@ -72,7 +72,40 @@ CSCI 2134  Software Development
 CSCI 2141  Intro to Database Systems
 ```
 
-One course per line, ready to paste into `plan.py`. Leave the level off to see the whole subject. Leave `--term` off and it adds a column telling you which terms each course runs in.
+One course per line, ready to paste into `plan.py`. Leave the level off to see the whole subject.
+
+Leave `--term` off and each course gets its terms in brackets instead:
+
+```
+$ python3 browser.py --list CSCI 2000
+CSCI 2115  Theory of Computer Science  [26/27 Fall] [26/27 Winter]
+CSCI 2122  Systems Programming         [26/27 Fall] [26/27 Winter]
+CSCI 2134  Software Development        [26/27 Fall] [26/27 Winter]
+CSCI 2141  Intro to Database Systems   [26/27 Fall] [26/27 Winter]
+```
+
+The academic year is in the label on purpose. Dal keeps several terms viewable at once — right now that includes both 2025/2026 Winter and 2026/2027 Winter — so a bare "Winter" would let you plan around a term that has already happened.
+
+### Seeing the actual times
+
+Give a course number instead of a level, and you get every section with its meeting times:
+
+```
+$ python3 browser.py --list CSCI 2134 --term 202710
+CSCI 2134  Software Development  [26/27 Fall]
+  Lecture   01    WF     14:35-15:55  Dunn 101
+  Lecture   02    TR     13:05-14:25  Dunn 101
+  Lab       B01   M      16:05-17:25  Goldberg 134
+  Lab       B03   M      14:35-15:55  Goldberg 143
+```
+
+Lectures first, then labs, then tutorials. Add `--sections` to get the same detail for a whole level or subject — `--list CSCI 4000 --sections`.
+
+A section that meets at two different times gets a line for each. One with no fixed time says so instead:
+
+```
+  Lecture   01    --     Asynchronous Session
+```
 
 ### Checking a degree checklist
 
@@ -89,14 +122,28 @@ Then, the day the new timetable goes up:
 
 ```
 $ python3 browser.py --check checklist.txt
-CSCI 3151  Foundations of Machine Learning  Fall
-CSCI 2115  Theory of Computer Science       Fall, Winter
+CSCI 3151  Foundations of Machine Learning  [26/27 Fall]
+CSCI 2115  Theory of Computer Science       [26/27 Fall] [26/27 Winter]
 CSCI 4192  —                                not offered
 ```
 
-That's the whole reason `--check` exists: courses that only run some years are easy to miss.
+That's the whole reason `--check` exists: courses that only run some years are easy to miss. `not offered` is deliberately left unbracketed, so it never reads as the name of a term.
 
-You can also list them inline: `python3 browser.py --check CSCI 3151 CSCI 2115`.
+You can also list them inline, and quoting is optional:
+
+```
+$ python3 browser.py --check CSCI 3151 CSCI 2115
+```
+
+Add `--sections` and you get the meeting times instead of the summary:
+
+```
+$ python3 browser.py --check CSCI 3151 CSCI 4192 --sections
+CSCI 3151  Foundations of Machine Learning  [26/27 Fall]
+  Lecture   01    MW     08:35-09:55  Dunn 135
+
+CSCI 4192  not offered
+```
 
 ### All of browser.py
 
@@ -106,10 +153,15 @@ You can also list them inline: `python3 browser.py --check CSCI 3151 CSCI 2115`.
 | `--subjects --term 202710` | subject codes offered that term |
 | `--list CSCI --term 202710` | every CSCI course offered |
 | `--list CSCI 4000 --term 202710` | the 4000-level CSCI courses in the fall 2026/2027 term |
+| `--list CSCI 2134 --term 202710` | one course, with every lecture, lab and tutorial time |
+| `--list CSCI 4000 --sections` | the same detail for a whole level |
 | `--check CSCI 4192 CSCI 3152` | which of these run, and when |
 | `--check checklist.txt` | same, read from a file |
+| `--check CSCI 3151 --sections` | which terms, plus the times in each |
 
 `--term` is repeatable. Omit it to cover every available term.
+
+The second argument to `--list` is read as a level when it ends in `000`, and as a single course number otherwise — so `--list CSCI 4000` gives you the whole level and `--list CSCI 2134` gives you that one course.
 
 ## Building a schedule: plan.py
 
