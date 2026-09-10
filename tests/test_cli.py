@@ -58,15 +58,108 @@ check_true("--list with a level narrows", "CSCI 3151" in text)
 check_true("and drops the rest", "CSCI 2134" not in text)
 
 code, text = run(browser.main, ["--list", "CSCI", "3000"])
-check_true("--list without a term adds a term column", "Fall" in text)
+check_true("--list without a term adds a bracketed term column",
+           "[26/27 Fall]" in text)
 
 code, text = run(browser.main, ["--list", "CSCI", "9000", "--term", "202710"])
 check_true("an empty level says so", "nothing offered" in text)
 
+# --sections shows meeting times; a bare course number implies it.
+code, text = run(browser.main, ["--list", "CSCI", "2134", "--term", "202710"])
+check_true("a course number shows its sections", "Lecture   01" in text)
+check_true("and its labs", "Lab       B01" in text)
+check_true("with days and times", "WF     14:35-15:55" in text)
+check_true("and the room", "Dunn 101" in text)
+check_true("other courses stay out", "CSCI 2141" not in text)
+
+code, text = run(browser.main, ["--list", "CSCI", "3000", "--term", "202710",
+                                "--sections"])
+check_true("--sections works with a level", "CSCI 3151" in text)
+check_true("and shows the time", "08:35-09:55" in text)
+
+code, text = run(browser.main, ["--list", "CSCI", "2000", "--term", "202710"])
+check_true("without --sections the list still collapses",
+           "Lecture" not in text)
+
+code, text = run(browser.main, ["--list", "AQUA", "--term", "202710",
+                                "--sections"])
+check_true("a two-pattern section shows both", text.count("11:35-12:25") == 1)
+check_true("second pattern on its own line", "10:35-11:25" in text)
+
+code, text = run(browser.main, ["--list", "ACSC", "--term", "202710",
+                                "--sections"])
+check_true("an unscheduled section names its mode",
+           "Consult Department" in text)
+check_true("and does not repeat it as a room", "room TBA" not in text)
+
+code, text = run(browser.main, ["--list", "CSCI", "1109", "--sections"])
+check_true("across terms each gets its own block", text.count("CSCI 1109") == 2)
+check_true("labelled by term with the year",
+           "[26/27 Fall]" in text and "[26/27 Winter]" in text)
+
+# Term labels must carry the academic year. Dal lists 2025/2026 Winter and
+# 2026/2027 Winter at the same time, and a bare "Winter" makes a course that
+# already ran look like one you can still take.
+check_true("term_label keeps the year",
+           browser.term_label("2026/2027 Fall") == "26/27 Fall")
+check_true("term_label separates the two winters",
+           browser.term_label("2025/2026 Winter")
+           != browser.term_label("2026/2027 Winter"))
+check_true("term_label passes odd descriptions through",
+           browser.term_label("Summer") == "Summer")
+
+code, text = run(browser.main, ["--check", "CSCI 3152", "CSCI 1315"])
+check_true("the old winter is labelled 25/26", "[25/26 Winter]" in text)
+check_true("the new winter is labelled 26/27", "[26/27 Winter]" in text)
+check_true("no bare 'Winter' anywhere", " Winter" not in text.replace("/26 Winter", "").replace("/27 Winter", ""))
+
+code, text = run(browser.main, ["--check", "CSCI 3152", "--sections"])
+check_true("--check --sections shows the section times", "10:05-11:25" in text)
+check_true("tagged with the right term", "[25/26 Winter]" in text)
+# The block already carries course, title and term, so the summary table
+# would be saying all of it a second time.
+check_true("the course is named once", text.count("CSCI 3152") == 1)
+check_true("the title is printed once", text.count("Digital Media") == 1)
+check_true("the term is printed once", text.count("25/26 Winter") == 1)
+
+code, text = run(browser.main, ["--check", "CSCI 3151", "CSCI 9999",
+                                "--sections"])
+check_true("a missing course still gets a line", "CSCI 9999  not offered" in text)
+check_true("alongside the offered one", "08:35-09:55" in text)
+
+# Every section block is tagged, even when only one term was asked for.
+code, text = run(browser.main, ["--list", "CSCI", "2134", "--term", "202710"])
+check_true("a single-term block is still bracketed", "[26/27 Fall]" in text)
+
 code, text = run(browser.main, ["--check", "CSCI 3151", "csci2115", "CSCI 9999"])
 check_true("--check reports a Fall-only course", "CSCI 3151" in text)
-check_true("--check reports both terms", "Fall, Winter" in text)
+check_true("--check brackets each term",
+           "[26/27 Fall] [26/27 Winter]" in text)
 check_true("--check reports a missing course", "not offered" in text)
+check_true("'not offered' is not bracketed", "[not offered]" not in text)
+
+# The shell splits `--check CSCI 3152 CSCI 3151` into four arguments, so a
+# bare four-letter subject followed by a bare number has to be rejoined --
+# otherwise the tool would demand quotes around every course.
+check_true("rejoins split course names",
+           browser.join_split_courses(["CSCI", "3152", "CSCI", "3151"])
+           == ["CSCI 3152", "CSCI 3151"])
+check_true("leaves already-quoted names alone",
+           browser.join_split_courses(["CSCI 3152", "MATH 2060"])
+           == ["CSCI 3152", "MATH 2060"])
+check_true("leaves unspaced names alone",
+           browser.join_split_courses(["csci2115"]) == ["csci2115"])
+check_true("leaves a filename alone",
+           browser.join_split_courses(["checklist.txt"]) == ["checklist.txt"])
+check_true("does not swallow a trailing subject",
+           browser.join_split_courses(["CSCI", "3152", "CSCI"])
+           == ["CSCI 3152", "CSCI"])
+
+code, text = run(browser.main, ["--check", "CSCI", "3152", "CSCI", "3151"])
+check_true("unquoted --check works", code == 0)
+check_true("and finds both courses",
+           "CSCI 3152" in text and "CSCI 3151" in text)
+check_true("without inventing a third", text.count("CSCI") == 2)
 
 checklist = os.path.join(tempfile.mkdtemp(), "checklist.txt")
 with open(checklist, "w", encoding="utf-8") as handle:

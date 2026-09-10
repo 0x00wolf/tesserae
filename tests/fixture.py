@@ -116,6 +116,12 @@ SECTIONS = [
     ("202720", "MATH", "2060", "Intro Probability & Statistics", "21862", "T04", "Tut", "L0",
      "W", "0835-1025", "Studley LSC-COMMON AREA C234", "11", "2", "9"),
 
+    # In 2025/2026 Winter -- a term Banner still lists. It exists so the tests
+    # can catch a term label that says only "Winter" and leaves you unable to
+    # tell this from 2026/2027 Winter.
+    ("202620", "CSCI", "3152", "Digital Media", "26001", "01", "Lec", None,
+     "TR", "1005-1125", "Studley GOLDBERG COMPUTER SCIENCE BLDG 127", "40", "40", "0"),
+
     # No fixed meeting time.
     ("202710", "ACSC", "4950", "Honours Research Project", "10020", "01", "Lec", None,
      "", "C/D", "Consult Department", "10", "0", "10"),
@@ -125,6 +131,7 @@ DAY_COLUMN = {"U": "SUNDAYS", "M": "MONDAYS", "T": "TUESDAYS", "W": "WEDNESDAYS"
               "R": "THURSDAYS", "F": "FRIDAYS", "S": "SATURDAYS"}
 
 TERM_DATES = {
+    "202620": ("06-JAN-2026", "14-APR-2026"),
     "202710": ("08-SEP-2026", "09-DEC-2026"),
     "202720": ("11-JAN-2027", "13-APR-2027"),
 }
