@@ -1,8 +1,8 @@
-# Tessera
-
 ![banner](./assets/image.jfif)
 
-A tessera (plural: tesserae, diminutive tessella) is an individual tile, usually formed in the shape of a square, used in creating a mosaic. 
+# Tesserae
+
+Tesserae are non-overlapping tiles that are used to make mosaics.
 
 This project is intended to vastly simplify the process of determining your ideal schedule at university. Currently it is designed to work out of the box for Dalhousie University, but the scraper isn't actually Dal-specific. It targets Ellucian Banner Extensibility, which a lot of universities run. Swap the base URL and the domain names and it should work for another school with minimal or no tweaking.
 
