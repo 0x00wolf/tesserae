@@ -54,7 +54,7 @@ Example:
 ```bash
 $ uv sync
 $ uv run browser.py --terms # find out term codes
-$ uv run browser.py --check 3152 --sections --term 202710 # Example: Check to see if a specific course is offered in a specific term.
+$ uv run browser.py --check CSCI 3152 --sections --term 202710 # Example: Check to see if a specific course is offered in a specific term.
 ```
 
 If you're using pip:

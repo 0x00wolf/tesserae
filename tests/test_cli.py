@@ -81,6 +81,28 @@ code, text = run(browser.main, ["--list", "CSCI", "2000", "--term", "202710"])
 check_true("without --sections the list still collapses",
            "Lecture" not in text)
 
+# --seats
+code, text = run(browser.main, ["--list", "CSCI", "2134", "--term", "202710",
+                                "--seats"])
+check_true("seats show free out of capacity", "9/60 seats" in text)
+check_true("a full section is called out", "0/60 FULL" in text)
+
+# Seats are per section, so asking for them switches to the section view
+# even without --sections; a course-level total would be misleading.
+code, text = run(browser.main, ["--list", "MATH", "--term", "202710", "--seats"])
+check_true("--seats implies the section view", "Tutorial" in text)
+check_true("with per-section counts", "3/11 seats" in text)
+
+# The extras belong to the section, not to each of its meeting patterns.
+code, text = run(browser.main, ["--list", "AQUA", "--term", "202710",
+                                "--seats"])
+check_true("a two-pattern section states its seats once",
+           text.count("12/15 seats") == 1)
+check_true("but still shows both patterns", "10:35-11:25" in text)
+
+code, text = run(browser.main, ["--check", "CSCI 1109", "--seats"])
+check_true("--check takes the columns too", "46/60 seats" in text)
+
 code, text = run(browser.main, ["--list", "AQUA", "--term", "202710",
                                 "--sections"])
 check_true("a two-pattern section shows both", text.count("11:35-12:25") == 1)

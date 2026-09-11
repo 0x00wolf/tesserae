@@ -10,6 +10,7 @@ browser.py -- look up what Dalhousie is offering.
     python3 browser.py --check CSCI 4192 CSCI 3130 CSCI 2115
     python3 browser.py --check checklist.txt
     python3 browser.py --check CSCI 3151 --sections
+    python3 browser.py --list CSCI 2134 --term 202710 --seats
 
 This file only reads the timetable. To actually build a schedule, edit plan.py.
 """
@@ -99,14 +100,6 @@ def print_courses(timetable, subject, level, terms, names, single_term):
               % (subject, "" if level is None else " at the %d level" % level, where))
         return
 
-    if single_term:
-        width = 0
-        for course, _title in rows:
-            width = max(width, len(course))
-        for course, title in rows:
-            print("%-*s  %s" % (width, course, title))
-        return
-
     when = {}
     for section in sections:
         when.setdefault(section.course, set()).add(section.term)
@@ -116,13 +109,20 @@ def print_courses(timetable, subject, level, terms, names, single_term):
     for course, title in rows:
         code_width = max(code_width, len(course))
         title_width = max(title_width, len(title))
+
     for course, title in rows:
-        terms_here = sorted(when.get(course, set()))
-        labels = []
-        for term in terms_here:
-            labels.append("[%s]" % names.get(term, term))
+        columns = []
+        if not single_term:
+            labels = []
+            for term in sorted(when.get(course, set())):
+                labels.append("[%s]" % names.get(term, term))
+            columns.append(" ".join(labels))
+
+        if not columns:
+            print("%-*s  %s" % (code_width, course, title))
+            continue
         print("%-*s  %-*s  %s" % (code_width, course, title_width, title,
-                                  " ".join(labels)))
+                                  "  ".join(columns)))
 
 
 def component_order(section):
@@ -131,7 +131,24 @@ def component_order(section):
     return (order.get(section.component, 3), section.section or "")
 
 
-def print_sections(timetable, subject, level, number, terms, names):
+def seat_text(section):
+    """
+    '9/60 seats', or 'FULL' when none are left.
+
+    Seat counts are whatever Banner reported at the moment of the request.
+    They move daily, and a lot once registration opens.
+    """
+    free = section.seats_available
+    capacity = section.capacity
+    if free is None or capacity is None:
+        return "seats unknown"
+    if free <= 0:
+        return "0/%d FULL" % capacity
+    return "%d/%d seats" % (free, capacity)
+
+
+def print_sections(timetable, subject, level, number, terms, names,
+                   show_seats=False):
     """
     Every section, with its meeting times, grouped under its course.
 
@@ -140,7 +157,9 @@ def print_sections(timetable, subject, level, number, terms, names):
     line of output is ever ambiguous about which term it describes.
 
     A section that meets on more than one pattern gets a line per pattern;
-    one with no fixed time says so.
+    one with no fixed time says so. Rows are collected before printing so the
+    room column can be padded to fit, which keeps the optional seat column
+    lined up.
     """
     course = None
     if number is not None:
@@ -169,19 +188,42 @@ def print_sections(timetable, subject, level, number, terms, names):
                                 grouped[(term, course_code)][0].title,
                                 names.get(term, term)))
 
+        rows = []
         for section in sorted(grouped[(term, course_code)], key=component_order):
-            label = "  %-9s %-4s" % (section.component, section.section)
+            extras = []
+            if show_seats:
+                extras.append(seat_text(section))
+
+            label = "%-9s %-4s" % (section.component, section.section)
             if not section.meetings:
-                print("%s  (no meeting times listed)" % label)
+                rows.append((label, "", "(no meeting times listed)", extras))
                 continue
             for meeting in section.meetings:
                 if meeting.scheduled:
-                    print("%s  %-6s %s  %s" % (label, meeting.letters(),
-                                               meeting.clock(), meeting.room))
+                    when = "%-6s %s" % (meeting.letters(), meeting.clock())
+                    where_text = meeting.room
                 else:
                     # room and delivery say the same thing here, so print one.
-                    print("%s  %-6s %s" % (label, "--", meeting.delivery))
-                label = "  %-9s %-4s" % ("", "")
+                    when = "%-6s" % "--"
+                    where_text = meeting.delivery
+                rows.append((label, when, where_text, extras))
+                # Only the first line of a multi-pattern section is
+                # labelled, and its seat count belongs to the section, not
+                # to the individual meeting.
+                label = "%-9s %-4s" % ("", "")
+                extras = []
+
+        room_width = 0
+        for _label, _when, where_text, extras in rows:
+            if extras:
+                room_width = max(room_width, len(where_text))
+
+        for label, when, where_text, extras in rows:
+            line = "  %s  %s  %s" % (label, when, where_text)
+            if extras:
+                line = "  %s  %s  %-*s  %s" % (label, when, room_width,
+                                               where_text, "  ".join(extras))
+            print(line.rstrip())
 
 
 def join_split_courses(entries):
@@ -226,7 +268,8 @@ def read_checklist(entries):
     return courses
 
 
-def print_check(timetable, entries, terms, names, show_sections=False):
+def print_check(timetable, entries, terms, names, show_sections=False,
+                show_seats=False):
     """Which of these courses run, and when. Empty means not this year."""
     courses = join_split_courses(read_checklist(entries))
     if not courses:
@@ -249,7 +292,8 @@ def print_check(timetable, entries, terms, names, show_sections=False):
             first = False
             if offered.get(course):
                 subject, number = split_course(course)
-                print_sections(timetable, subject, None, number, terms, names)
+                print_sections(timetable, subject, None, number, terms, names,
+                               show_seats)
             else:
                 print("%s  not offered" % course)
         return
@@ -289,6 +333,9 @@ def build_parser():
     parser.add_argument("--sections", action="store_true",
                         help="show every section and its meeting times; "
                              "works with --list and --check")
+    parser.add_argument("--seats", action="store_true",
+                        help="show seats left out of capacity. Implies "
+                             "--sections, since seats are per section")
     parser.add_argument("--check", nargs="+", metavar="COURSE",
                         help="which of these courses are offered; quoting is "
                              "optional, so CSCI 3151 CSCI 2115 works. "
@@ -334,18 +381,20 @@ def main(argv=None):
                     level = int(given)
                 else:
                     number = given
-            if args.sections:
-                print_sections(timetable, subject, level, number,
-                               terms, names)
-            elif number is not None:
-                print_sections(timetable, subject, level, number,
-                               terms, names)
+            # Seats are a per-section fact; any course-level total would
+            # mislead, so asking for them switches to the section view.
+            detailed = args.sections or args.seats or number is not None
+            if detailed:
+                print_sections(timetable, subject, level, number, terms, names,
+                               args.seats)
             else:
-                print_courses(timetable, subject, level, terms, names, single_term)
+                print_courses(timetable, subject, level, terms, names,
+                              single_term)
             return 0
 
         if args.check:
-            print_check(timetable, args.check, terms, names, args.sections)
+            print_check(timetable, args.check, terms, names,
+                        args.sections or args.seats, args.seats)
             return 0
 
     except TimetableError as error:
