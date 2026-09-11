@@ -2,7 +2,7 @@
 
 # Tesserae
 
-Tesserae are non-overlapping tiles that are used to make mosaics.
+Tesserae are non-overlapping tiles that are used to make a mosaic.
 
 This project is intended to vastly simplify the process of determining your ideal schedule at university. Currently it is designed to work out of the box for Dalhousie University, but the scraper isn't actually Dal-specific. It targets Ellucian Banner Extensibility, which a lot of universities run. Swap the base URL and the domain names and it should work for another school with minimal or no tweaking.
 
